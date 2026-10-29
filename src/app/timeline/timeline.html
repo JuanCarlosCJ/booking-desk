@@ -1,0 +1,45 @@
+<div class="tl" [style.--span]="span()">
+  <div class="tl-inner">
+    <div class="tl-head">
+      <div class="tl-corner"></div>
+      <div class="tl-hours">
+        @for (h of hours(); track h) {
+          <span [style.left.%]="pct(h)">{{ formatTime(h) }}</span>
+        }
+      </div>
+    </div>
+
+    @for (group of groups; track group.area) {
+      <div class="tl-area"><span>{{ areaLabel(group.area) }}</span></div>
+      @for (table of group.tables; track table.id) {
+        <div class="tl-row">
+          <div class="tl-label">
+            <strong>{{ tableLabel(table) }}</strong>
+            <span>{{ i18n.t('table.seats', { n: table.seats }) }}</span>
+          </div>
+          <div class="tl-track" (click)="onTrackClick($event, table)">
+            @for (b of byTable().get(table.id) ?? []; track b.id) {
+              <button
+                type="button"
+                class="tl-block"
+                [class]="'status-' + b.status"
+                [style.left.%]="pct(b.start)"
+                [style.width.%]="width(b)"
+                [attr.aria-label]="blockLabel(b, table)"
+                [title]="blockLabel(b, table)"
+                (click)="$event.stopPropagation(); open.emit(b)"
+              >
+                <strong>{{ b.name }}</strong>
+                <span>{{ formatTime(b.start) }} · {{ b.partySize }}p{{ b.notes ? ' · ★' : '' }}</span>
+              </button>
+            }
+            @if (nowPct() !== null) {
+              <div class="tl-now" [style.left.%]="nowPct()"></div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+<p class="hint">{{ i18n.t('timeline.hint') }}</p>

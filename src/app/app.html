@@ -1,0 +1,98 @@
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+      <rect x="3" y="6" width="34" height="30" rx="7" fill="var(--accent)" />
+      <rect x="3" y="6" width="34" height="9" rx="4" fill="#00000026" />
+      <rect x="11" y="2.5" width="3.5" height="8" rx="1.75" fill="var(--ink)" />
+      <rect x="25.5" y="2.5" width="3.5" height="8" rx="1.75" fill="var(--ink)" />
+      <circle cx="20" cy="25" r="6.5" fill="none" stroke="#fff" stroke-width="2.4" />
+      <path d="M20 21.5V25l2.4 1.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" />
+    </svg>
+    <div>
+      <h1>Booking Desk</h1>
+      <p>{{ i18n.t('app.restaurant') }} · {{ i18n.t('app.tagline') }}</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="btn ghost" (click)="resetDemo()">{{ i18n.t('app.reset') }}</button>
+    <div class="seg" role="group" [attr.aria-label]="i18n.t('app.language')">
+      @for (l of langs; track l) {
+        <button type="button" [attr.aria-pressed]="i18n.lang() === l" (click)="setLang(l)">{{ l.toUpperCase() }}</button>
+      }
+    </div>
+  </div>
+</header>
+
+<section class="toolbar">
+  <div class="day-nav">
+    <button type="button" class="icon-btn" (click)="shiftDay(-1)" [attr.aria-label]="i18n.t('nav.prev')">‹</button>
+    <button type="button" class="btn" [class.active]="isToday()" (click)="goToday()">{{ i18n.t('nav.today') }}</button>
+    <button type="button" class="icon-btn" (click)="shiftDay(1)" [attr.aria-label]="i18n.t('nav.next')">›</button>
+    <h2 class="day-title">{{ i18n.longDate(date()) }}</h2>
+    <input
+      type="date"
+      class="input date-pick"
+      [value]="date()"
+      (change)="pickDate($any($event.target).value)"
+      [attr.aria-label]="i18n.t('nav.pick')"
+    />
+  </div>
+  <div class="toolbar-right">
+    <div class="seg" role="group">
+      @for (s of services; track s) {
+        <button type="button" [attr.aria-pressed]="service() === s" (click)="service.set(s)">{{ serviceLabel(s) }}</button>
+      }
+    </div>
+    <button type="button" class="btn primary" (click)="newBooking()">+ {{ i18n.t('action.new') }}</button>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <span>{{ i18n.t('stats.bookings') }}</span><strong>{{ stats().bookings }}</strong>
+  </div>
+  <div class="stat">
+    <span>{{ i18n.t('stats.guests') }}</span><strong>{{ stats().guests }}</strong>
+  </div>
+  @if (freeNow() !== null) {
+    <div class="stat live">
+      <span>{{ i18n.t('stats.freeNow') }}</span><strong>{{ freeNow() }} / {{ tableCount }}</strong>
+    </div>
+  } @else {
+    <div class="stat">
+      <span>{{ i18n.t('stats.peak') }}</span><strong>{{ peakText() }}</strong>
+    </div>
+  }
+</section>
+
+<div class="seg view-switch" role="group">
+  <button type="button" [attr.aria-pressed]="view() === 'timeline'" (click)="view.set('timeline')">{{ i18n.t('view.timeline') }}</button>
+  <button type="button" [attr.aria-pressed]="view() === 'list'" (click)="view.set('list')">{{ i18n.t('view.list') }}</button>
+</div>
+
+<main class="layout" [attr.data-view]="view()">
+  <section class="panel timeline-panel">
+    <app-timeline [date]="date()" [service]="service()" [bookings]="bookings()" (open)="edit($event)" (create)="createAt($event)" />
+  </section>
+  <aside class="panel list-panel">
+    <app-booking-list [bookings]="bookings()" (open)="edit($event)" />
+  </aside>
+</main>
+
+<footer class="footer">
+  <p>{{ i18n.t('app.demoNote') }}</p>
+  <p>{{ i18n.t('app.madeBy') }} <a href="https://juancarloscj.com">Juan Carlos</a></p>
+</footer>
+
+@if (draft(); as d) {
+  <app-booking-form [draft]="d" (save)="save($event)" (cancelBooking)="cancel($event)" (close)="draft.set(null)" />
+}
+
+@if (toast(); as t) {
+  <div class="toast" role="status">
+    <span>{{ t.text }}</span>
+    @if (t.undo) {
+      <button type="button" class="link" (click)="runUndo()">{{ i18n.t('toast.undo') }}</button>
+    }
+  </div>
+}

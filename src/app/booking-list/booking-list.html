@@ -1,0 +1,48 @@
+<div class="list-head">
+  <h2>{{ i18n.t('list.title') }}</h2>
+  <input
+    type="search"
+    class="input"
+    [placeholder]="i18n.t('list.search')"
+    [attr.aria-label]="i18n.t('list.search')"
+    [value]="query()"
+    (input)="query.set($any($event.target).value)"
+  />
+</div>
+
+<ng-template #item let-b>
+  <li>
+    <button type="button" class="list-item" [class.inactive]="b.status === 'cancelled' || b.status === 'noshow'" (click)="open.emit(b)">
+      <span class="li-time">{{ formatTime(b.start) }}</span>
+      <span class="li-main">
+        <strong>{{ b.name }}</strong>
+        <span class="muted">{{ i18n.guests(b.partySize) }} · {{ tableName(b.tableId) }}@if (b.notes) { · {{ b.notes }} }</span>
+      </span>
+      <span class="pill status-{{ b.status }}">{{ statusLabel(b.status) }}</span>
+    </button>
+  </li>
+</ng-template>
+
+@if (bookings().length === 0) {
+  <p class="empty">{{ i18n.t('list.empty') }}</p>
+} @else if (matching().length === 0) {
+  <p class="empty">{{ i18n.t('list.noMatch') }}</p>
+} @else {
+  <ul class="list">
+    @for (b of active(); track b.id) {
+      <ng-container *ngTemplateOutlet="item; context: { $implicit: b }" />
+    }
+  </ul>
+  @if (inactive().length) {
+    <button type="button" class="link" (click)="showInactive.set(!showInactive())">
+      {{ showInactive() ? i18n.t('list.hideCancelled') : i18n.t('list.showCancelled', { n: inactive().length }) }}
+    </button>
+    @if (showInactive()) {
+      <ul class="list">
+        @for (b of inactive(); track b.id) {
+          <ng-container *ngTemplateOutlet="item; context: { $implicit: b }" />
+        }
+      </ul>
+    }
+  }
+}

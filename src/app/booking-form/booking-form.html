@@ -1,0 +1,135 @@
+<dialog #dialog class="sheet" (cancel)="onCancelEvent($event)" aria-labelledby="form-title">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <header class="sheet-head">
+      <h2 id="form-title">{{ isEdit ? i18n.t('form.edit') : i18n.t('form.new') }}</h2>
+      <button type="button" class="icon-btn" (click)="close.emit()" [attr.aria-label]="i18n.t('form.close')">✕</button>
+    </header>
+
+    <div class="sheet-body">
+      <div class="grid2">
+        <label class="field span2">
+          <span>{{ i18n.t('form.name') }}</span>
+          <input #nameInput class="input" formControlName="name" autocomplete="off" />
+          @if (showError('name')) {
+            <small class="error">{{ i18n.t('form.required') }}</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>{{ i18n.t('form.phone') }}</span>
+          <input class="input" formControlName="phone" type="tel" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>{{ i18n.t('form.party') }}</span>
+          <input class="input" formControlName="partySize" type="number" min="1" max="30" inputmode="numeric" />
+          @if (showError('partySize')) {
+            <small class="error">1–30</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>{{ i18n.t('form.date') }}</span>
+          <input class="input" formControlName="date" type="date" />
+          @if (showError('date')) {
+            <small class="error">{{ i18n.t('form.required') }}</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>{{ i18n.t('form.time') }}</span>
+          <select class="input" formControlName="start">
+            @for (s of slots; track s) {
+              <option [ngValue]="s">{{ formatTime(s) }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="field">
+          <span>{{ i18n.t('form.duration') }}</span>
+          <select class="input" formControlName="duration">
+            @for (d of durations; track d) {
+              <option [ngValue]="d">{{ i18n.t('form.minutes', { n: d }) }}</option>
+            }
+          </select>
+        </label>
+
+        @if (isEdit) {
+          <label class="field">
+            <span>{{ i18n.t('form.status') }}</span>
+            <select class="input" formControlName="status">
+              @for (s of statuses; track s) {
+                <option [ngValue]="s">{{ statusLabel(s) }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        <label class="field span2">
+          <span>{{ i18n.t('form.table') }}</span>
+          <select class="input" formControlName="tableId">
+            <option value="" disabled>—</option>
+            @for (t of tables; track t.id) {
+              <option [ngValue]="t.id">{{ tableOption(t) }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div class="availability" aria-live="polite">
+        @if (clashes().length) {
+          @for (c of clashes(); track c.id) {
+            <p class="msg error">
+              ✕
+              {{
+                i18n.t('form.clash', {
+                  t: table()?.name ?? '',
+                  name: c.name,
+                  from: formatTime(c.start),
+                  to: formatTime(c.start + c.duration),
+                })
+              }}
+            </p>
+          }
+        } @else if (table()) {
+          <p class="msg ok">✓ {{ i18n.t('form.free', { t: table()!.name }) }}</p>
+        }
+        @if (tooSmall()) {
+          <p class="msg warn">
+            ! {{ i18n.t('form.tooSmall', { t: table()!.name, seats: table()!.seats, n: form.controls.partySize.value }) }}
+          </p>
+        }
+        @if (clashes().length || tooSmall() || !table()) {
+          @if (suggestions().length) {
+            <div class="suggest">
+              <span>{{ i18n.t('form.suggest') }}</span>
+              @for (t of suggestions(); track t.id) {
+                <button type="button" class="chip" (click)="pickTable(t)">
+                  {{ tableName(t) }} · {{ t.seats }}
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="msg warn">{{ i18n.t('form.noneFree') }}</p>
+          }
+        }
+      </div>
+
+      <label class="field">
+        <span>{{ i18n.t('form.notes') }}</span>
+        <textarea class="input" formControlName="notes" rows="2" [placeholder]="i18n.t('form.notesPlaceholder')"></textarea>
+      </label>
+    </div>
+
+    <footer class="sheet-foot">
+      @if (isEdit && draft().booking!.status !== 'cancelled') {
+        <button type="button" class="btn danger-ghost" (click)="cancelBooking.emit(draft().booking!)">
+          {{ i18n.t('form.cancelBooking') }}
+        </button>
+      }
+      <span class="grow"></span>
+      <button type="button" class="btn ghost" (click)="close.emit()">{{ i18n.t('form.close') }}</button>
+      <button type="submit" class="btn primary" [disabled]="clashes().length > 0">{{ i18n.t('form.save') }}</button>
+    </footer>
+  </form>
+</dialog>
